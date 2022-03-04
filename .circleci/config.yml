@@ -1,0 +1,24 @@
+version: 2
+jobs:
+  deploy:
+    docker:
+      - image: circleci/node:chakracore-8.11.1
+    steps:
+      - run:
+          name: AWS EC2 deploy
+          command: |
+            ssh -o StrictHostKeyChecking=no $USER_HOST@$PUBLIC_IP \
+            "echo Start deploy && \
+            cd /var/www/fitness-tracking-partner && \
+            git pull && \
+            docker-compose -f docker-compose.prod.yml stop && \
+            docker-compose -f docker-compose.prod.yml build && \
+            docker-compose -f docker-compose.prod.yml up -d && \
+            docker exec -ti app_web_api python manage.py migrate --no-input && \
+            docker exec -ti app_web_api python manage.py collectstatic --no-input && \
+            echo Deploy end"
+workflows:
+  version: 2
+  build-and-deploy:
+    jobs:
+      - deploy
